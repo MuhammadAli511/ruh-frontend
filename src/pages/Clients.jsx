@@ -4,12 +4,18 @@ import { getAllClients } from '../utils/api';
 
 const Clients = () => {
   const [clients, setClients] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadClients();
   }, []);
+
+  useEffect(() => {
+    filterClients();
+  }, [clients, searchTerm]);
 
   const loadClients = async () => {
     try {
@@ -25,6 +31,24 @@ const Clients = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterClients = () => {
+    if (!searchTerm.trim()) {
+      setFilteredClients(clients);
+      return;
+    }
+
+    const filtered = clients.filter(client =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.phone.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredClients(filtered);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
   };
 
   if (loading) {
@@ -54,6 +78,48 @@ const Clients = () => {
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className="mt-6">
+        <div className="max-w-lg">
+          <label htmlFor="client-search" className="block text-sm font-medium text-gray-700 mb-2">
+            Search clients
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              id="client-search"
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-[#40A6BD] focus:border-[#40A6BD] sm:text-sm"
+              placeholder="Search by name, email, or phone..."
+            />
+            {searchTerm && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        {searchTerm && (
+          <div className="mt-2 text-sm text-gray-600">
+            Found {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''} matching "{searchTerm}"
+          </div>
+        )}
+      </div>
+
       <div className="mt-8 flow-root">
         <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
@@ -79,7 +145,7 @@ const Clients = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {clients.map((client) => (
+                  {filteredClients.map((client) => (
                     <tr key={client.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {client.name}
@@ -110,7 +176,27 @@ const Clients = () => {
         </div>
       </div>
 
-      {clients.length === 0 && (
+      {filteredClients.length === 0 && searchTerm && (
+        <div className="text-center py-12">
+          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No clients found</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            No clients match your search criteria. Try adjusting your search terms.
+          </p>
+          <div className="mt-6">
+            <button
+              onClick={clearSearch}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#40A6BD] hover:bg-[#359bb2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#40A6BD]"
+            >
+              Clear search
+            </button>
+          </div>
+        </div>
+      )}
+
+      {clients.length === 0 && !searchTerm && (
         <div className="text-center py-12">
           <h3 className="mt-2 text-sm font-medium text-gray-900">No clients</h3>
           <p className="mt-1 text-sm text-gray-500">
